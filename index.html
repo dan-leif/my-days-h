@@ -1,7 +1,7 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style>
 <title>My Days H</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="My Days H">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Figtree:wght@400;500;600;700;800&display=swap">
@@ -176,9 +176,6 @@ button { cursor: pointer; }
 .btn[disabled] { opacity: .45; cursor: default; }
 .rainbow { height: 6px; border-radius: 999px; background: linear-gradient(90deg, #e8174b, #f7941d, #ffd93b, #6cc24a, #2a9fd8, #7a4fbf, #f0427a); opacity: .85; }
 .foot { margin: 18px 0 28px; font-size: 13px; color: var(--muted); text-align: center; }
-.sync { display: inline-flex; align-items: center; gap: 6px; }
-.sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
-.sync.ok i { background: #3fae5a; }
 
 /* ---------- Sheets ---------- */
 .scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; animation: fade .18s ease; }
@@ -224,7 +221,6 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
 .history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
 .history li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--cell); font-variant-numeric: tabular-nums; font-size: 15px; }
 .history li span:last-child { color: var(--muted); }
-.copybox { margin: 0; padding: 12px; border-radius: 12px; background: var(--cell); font-size: 14px; white-space: pre-wrap; user-select: all; }
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%); z-index: 30;
   bottom: calc(20px + env(safe-area-inset-bottom, 0px));
@@ -238,7 +234,8 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
 @media (max-width: 360px) { .cell .n { font-size: 13px; } .month-chip h1 { font-size: 22px; } .grid, .weekdays { gap: 4px; } }
 </style>
-
+</head>
+<body>
 <header class="dye" id="dye">
   <canvas id="dyeCanvas" aria-hidden="true"></canvas>
   <div class="dye-inner">
@@ -269,7 +266,7 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
 
   <section class="summary" id="summary" aria-live="polite"></section>
 
-  <p class="foot"><span class="sync" id="sync"><i></i><span>Saved on this device</span></span></p>
+  <p class="foot">Saved only in this browser, on this device</p>
 </main>
 
 <div id="layer"></div>
@@ -315,42 +312,7 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
   function readLocal() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; } }
   function writeLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {} }
 
-  /* ---------- Cloud save (private to the signed-in viewer) ---------- */
-  let docRef = null, saveTimer = null, saving = false, pending = false;
-  function setSync(ok, text) { const el = document.getElementById("sync"); el.classList.toggle("ok", ok); el.lastElementChild.textContent = text; }
-  async function connect() {
-    if (!window.claude || typeof window.claude.use !== "function") return;
-    try {
-      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
-      if (!db || !user) return;
-      const id = await user.id();
-      if (!id) return;
-      docRef = db.collection("data/users/" + id).doc("tracker");
-      const snap = await Promise.race([docRef.get(), new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 10000))]);
-      if (snap.exists) {
-        state = clean(snap.data());
-        writeLocal();
-        render();
-      } else if (state.starts.length || Object.keys(state.notes).length) {
-        await pushNow();
-      }
-      setSync(true, "Saved to your account, private to you");
-    } catch { docRef = null; }
-  }
-  async function pushNow() {
-    if (!docRef) return;
-    if (saving) { pending = true; return; }
-    saving = true;
-    try { await docRef.set(JSON.parse(JSON.stringify(state))); setSync(true, "Saved to your account, private to you"); }
-    catch { setSync(false, "Couldn't reach your account. Saved on this device."); }
-    saving = false;
-    if (pending) { pending = false; pushNow(); }
-  }
-  function save() {
-    writeLocal();
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(pushNow, 700);
-  }
+  const save = writeLocal;
 
   /* ---------- Cycle math ---------- */
   function model() {
@@ -541,7 +503,6 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
   }
 
   /* ---------- Calendar reminder ---------- */
-  const isViewer = !!(window.claude && typeof window.claude.use === "function" && window.parent !== window);
   function icsFor(n) {
     const d = toIso(n).replace(/-/g, ""), e = toIso(n + 1).replace(/-/g, "");
     const [hh, mm] = state.remindTime.split(":").map(Number);
@@ -562,17 +523,12 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
     const body = `
       <p class="hint" style="font-size:15px">Adds an all-day event on <b>${longDate(n)}</b>, ${offsetLabel(state.remindOffset)} (${shortDate(M.last + M.L)}), with an alert at ${timeLabel}. The event is just called <b id="evTitle"></b>, so it won't say what it's for if someone sees your calendar. You can change the name in Settings.</p>
       <div class="actions">
-        ${isViewer ? "" : `<button class="btn primary" data-act="ics">${ICON.bell} Add to iPhone Calendar</button>`}
-        <a class="btn ${isViewer ? "primary" : "soft"}" href="${gcal}" target="_blank" rel="noopener">Add to Google Calendar</a>
+        <button class="btn primary" data-act="ics">${ICON.bell} Add to iPhone Calendar</button>
+        <a class="btn soft" href="${gcal}" target="_blank" rel="noopener">Add to Google Calendar</a>
       </div>
-      ${isViewer ? `<p class="callout">Adding straight to the iPhone Calendar works once My Days H is installed as its own app. Here, use Google Calendar, or add the event yourself:</p>
-      <pre class="copybox" id="copyText"></pre>
-      <button class="btn soft" data-act="copy">Copy event details</button>` : ""}
       <p class="hint">If your period date changes, add a new reminder and delete the old event.</p>`;
     openSheet("Calendar reminder", body, sheet => {
       sheet.querySelector("#evTitle").textContent = state.remindTitle;
-      const ct = sheet.querySelector("#copyText");
-      if (ct) ct.textContent = `${state.remindTitle}\n${longDate(n)}, all day\nAlert at ${timeLabel}`;
       sheet.dataset.n = n;
     });
   }
@@ -658,18 +614,9 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
       });
     });
   }
-  async function exportBackup() {
+  function exportBackup() {
     const json = JSON.stringify({ app: "My Days H", version: 1, saved: new Date().toISOString(), ...state }, null, 2);
     const name = `my-days-h-backup-${toIso(today)}.json`;
-    if (isViewer) {
-      try {
-        const dl = await window.claude.use("downloads");
-        if (!dl) { toast("Saving files isn't available here"); return; }
-        await dl.save({ filename: name, data: json });
-        toast("Backup saved");
-      } catch (e) { if (!e || e.code !== "declined") toast("Couldn't save the backup"); }
-      return;
-    }
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([json], { type: "application/json" })); a.download = name;
     document.body.appendChild(a); a.click(); a.remove();
@@ -706,7 +653,7 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
     if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) shiftMonth(dx < 0 ? 1 : -1);
     tx = ty = null;
   });
-  document.addEventListener("click", async e => {
+  document.addEventListener("click", e => {
     const b = e.target.closest("[data-act]"); if (!b) return;
     const act = b.dataset.act;
     if (act === "close") closeSheet();
@@ -714,11 +661,6 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
     else if (act === "open-day") openDay(selected);
     else if (act === "remind") openRemind();
     else if (act === "ics") { downloadIcs(Number(layer.querySelector(".sheet").dataset.n)); toast("Opening Calendar"); }
-    else if (act === "copy") {
-      const txt = layer.querySelector("#copyText").textContent;
-      try { await navigator.clipboard.writeText(txt); toast("Copied"); }
-      catch { const r = document.createRange(); r.selectNodeContents(layer.querySelector("#copyText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
-    }
     else if (act === "export") exportBackup();
     else if (act === "ask-clear") {
       layer.querySelector("#dangerZone").innerHTML = `<p class="callout">This deletes every logged period and note. It can't be undone.</p>
@@ -777,7 +719,6 @@ textarea:focus, input:focus { border-color: var(--accent); outline: none; }
 
   render();
   maybeDraw();
-  connect();
 })();
 </script>
 
