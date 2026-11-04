@@ -1,0 +1,784 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>My Days H</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="My Days H">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Shrikhand&family=Figtree:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: a tie-dye header band, a square-cell month grid like a paper wall calendar, then a plain summary card. Color only means something (period, fertile, ovulation, today). */
+:root {
+  --bg: #fffafc;
+  --surface: #ffffff;
+  --cell: #f3eef3;
+  --cell-line: #e6dde7;
+  --ink: #2a2030;
+  --muted: #6f6379;
+  --accent: #d81e6a;          /* hot pink from the bottle's center */
+  --period: #e8174b;          /* logged period */
+  --period-soft: #f6a9bd;     /* predicted period bar */
+  --fertile: #fff1b8;         /* fertile window */
+  --ovul: #ffc72c;            /* ovulation day */
+  --on-ovul: #3a2a00;
+  --ovul-ink: #c98700;
+  --today: #2a9fd8;           /* bottle blue */
+  --note: #7a4fbf;            /* bottle purple */
+  --scrim: rgba(30, 16, 36, .45);
+  --shadow: 0 12px 40px rgba(60, 20, 60, .18);
+  --font-display: "Shrikhand", "Cooper Black", Georgia, serif;
+  --font-body: "Figtree", -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #161219; --surface: #211b26; --cell: #2a2330; --cell-line: #3a3141;
+    --ink: #f5eef8; --muted: #ad9fb8; --accent: #ff5c9d; --period: #ff4573;
+    --period-soft: #8a3550; --fertile: #4d4320; --ovul: #e7ae25; --on-ovul: #241a00; --ovul-ink: #f2bd3a;
+    --today: #4cb9ef; --note: #b38cff; --scrim: rgba(0,0,0,.6); --shadow: 0 12px 40px rgba(0,0,0,.5);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #161219; --surface: #211b26; --cell: #2a2330; --cell-line: #3a3141;
+  --ink: #f5eef8; --muted: #ad9fb8; --accent: #ff5c9d; --period: #ff4573;
+  --period-soft: #8a3550; --fertile: #4d4320; --ovul: #e7ae25; --on-ovul: #241a00; --ovul-ink: #f2bd3a;
+  --today: #4cb9ef; --note: #b38cff; --scrim: rgba(0,0,0,.6); --shadow: 0 12px 40px rgba(0,0,0,.5);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink);
+  font-family: var(--font-body); font-size: 16px; line-height: 1.4;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--today); outline-offset: 2px; }
+
+.wrap { max-width: 560px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+
+/* ---------- Tie-dye header ---------- */
+.dye {
+  position: relative; overflow: hidden;
+  border-radius: 0 0 28px 28px;
+  margin-bottom: 14px;
+}
+.dye canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.dye-inner {
+  position: relative; display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px;
+  padding-block: 18px 22px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  max-width: 560px; margin: 0 auto;
+}
+.brand {
+  grid-column: 1 / -1; display: flex; justify-content: space-between; align-items: center;
+}
+.wordmark {
+  font-family: var(--font-display); font-size: 15px; letter-spacing: .02em;
+  background: var(--surface); color: var(--accent);
+  padding: 4px 12px 5px; border-radius: 999px; box-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+.month-chip {
+  grid-column: 1 / -1; justify-self: start;
+  display: flex; align-items: center; gap: 4px;
+  background: var(--surface); border-radius: 18px; padding: 6px; box-shadow: 0 4px 18px rgba(0,0,0,.15);
+}
+.month-chip h1 {
+  margin: 0; min-width: 9.2ch; text-align: center;
+  font-family: var(--font-display); font-weight: 400; font-size: 26px; line-height: 1.1; color: var(--accent);
+  padding: 2px 4px 4px;
+}
+.round {
+  width: 40px; height: 40px; border-radius: 50%; border: 0; display: grid; place-items: center;
+  background: transparent; color: var(--ink);
+}
+.round:hover { background: var(--cell); }
+.round svg { width: 22px; height: 22px; }
+.icon-btn {
+  width: 42px; height: 42px; border-radius: 50%; border: 0; display: grid; place-items: center;
+  background: var(--surface); color: var(--ink); box-shadow: 0 2px 10px rgba(0,0,0,.12);
+}
+.icon-btn svg { width: 22px; height: 22px; }
+
+/* ---------- Calendar ---------- */
+.weekdays, .grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+.weekdays { margin-bottom: 6px; }
+.weekdays span { text-align: center; font-weight: 700; font-size: 13px; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.grid { touch-action: pan-y; }
+.cell {
+  position: relative; aspect-ratio: 1 / 1.08; max-width: 100%;
+  border: 0; border-radius: 10px; padding: 5px 6px; text-align: left;
+  background: var(--cell); overflow: hidden;
+  display: flex; flex-direction: column; justify-content: flex-start;
+  font-variant-numeric: tabular-nums;
+  transition: transform .12s ease;
+}
+.cell:active { transform: scale(.95); }
+.cell .n { font-weight: 700; font-size: 15px; position: relative; z-index: 1; }
+.cell.blank { background: transparent; pointer-events: none; }
+.cell.past .n { opacity: .9; }
+.cell.fertile { background: var(--fertile); }
+.cell.ovulation { background: var(--ovul); color: var(--on-ovul); }
+.cell.period { background: var(--period); color: #fff; }
+.cell.predicted::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 24%;
+  background: var(--period-soft);
+}
+.cell.period.predicted::after { display: none; }
+.cell.today::before {
+  content: ""; position: absolute; top: 0; right: 0; width: 44%; height: 44%;
+  background: linear-gradient(225deg, var(--today) 50%, transparent 50%);
+}
+.cell.selected { box-shadow: inset 0 0 0 3px var(--ink); }
+.cell .dot {
+  position: absolute; left: 7px; bottom: 7px; width: 7px; height: 7px; border-radius: 50%; background: var(--note);
+}
+.cell.period .dot { background: #fff; }
+.cell .drop { position: absolute; right: 5px; bottom: 5px; width: 13px; height: 13px; color: #fff; opacity: .9; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; margin: 12px 2px 0; font-size: 13px; color: var(--muted); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.sw { width: 14px; height: 14px; border-radius: 4px; display: inline-block; }
+.sw.p { background: var(--period); }
+.sw.pp { background: linear-gradient(to top, var(--period-soft) 40%, var(--cell) 40%); }
+.sw.f { background: var(--fertile); box-shadow: inset 0 0 0 1px var(--cell-line); }
+.sw.o { background: var(--ovul); }
+.sw.t { background: linear-gradient(225deg, var(--today) 50%, var(--cell) 50%); }
+
+/* ---------- Summary ---------- */
+.summary {
+  margin-top: 18px; background: var(--surface); border-radius: 22px; padding: 18px 18px 16px;
+  box-shadow: 0 1px 0 var(--cell-line), 0 6px 24px rgba(80, 30, 80, .07);
+  display: grid; gap: 14px;
+}
+.summary h2 { margin: 0; font-size: 18px; font-weight: 800; color: var(--accent); }
+.facts { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.fact { display: grid; grid-template-columns: 54px 1fr; align-items: center; gap: 12px; }
+.fact .big {
+  font-family: var(--font-display); font-size: 30px; line-height: 1; text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+.fact .big.p { color: var(--period); }
+.fact .big.o { color: var(--ovul-ink); }
+.fact .big.c { color: var(--today); }
+.fact .lbl { font-weight: 600; font-size: 16px; }
+.fact .sub { display: block; font-weight: 500; font-size: 13px; color: var(--muted); }
+.note-preview { margin: 0; padding: 10px 12px; border-radius: 12px; background: var(--cell); font-size: 15px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  border: 0; border-radius: 999px; padding: 12px 18px; font-weight: 700; font-size: 15px;
+  display: inline-flex; align-items: center; gap: 8px; min-height: 46px;
+}
+.btn svg { width: 18px; height: 18px; flex: none; }
+.btn.primary { background: var(--accent); color: #fff; }
+.btn.soft { background: var(--cell); color: var(--ink); }
+.btn.danger { background: transparent; color: var(--period); box-shadow: inset 0 0 0 2px var(--period); }
+.btn[disabled] { opacity: .45; cursor: default; }
+.rainbow { height: 6px; border-radius: 999px; background: linear-gradient(90deg, #e8174b, #f7941d, #ffd93b, #6cc24a, #2a9fd8, #7a4fbf, #f0427a); opacity: .85; }
+.foot { margin: 18px 0 28px; font-size: 13px; color: var(--muted); text-align: center; }
+.sync { display: inline-flex; align-items: center; gap: 6px; }
+.sync i { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); display: inline-block; }
+.sync.ok i { background: #3fae5a; }
+
+/* ---------- Sheets ---------- */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 20; animation: fade .18s ease; }
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 21;
+  max-height: 88%; overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); border-radius: 24px 24px 0 0; box-shadow: var(--shadow);
+  padding-top: 10px; padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  animation: rise .22s cubic-bezier(.2,.8,.2,1);
+}
+.sheet .wrap { display: grid; gap: 16px; }
+.grab { width: 44px; height: 5px; border-radius: 3px; background: var(--cell-line); margin: 0 auto 4px; }
+.sheet-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.sheet-head h3 { margin: 0; font-size: 20px; font-weight: 800; text-wrap: balance; }
+.sheet-head .round { background: var(--cell); }
+.toggle {
+  display: grid; grid-template-columns: 44px 1fr auto; align-items: center; gap: 12px;
+  width: 100%; border: 0; border-radius: 16px; padding: 14px; text-align: left;
+  background: var(--cell);
+}
+.toggle .ic { width: 44px; height: 44px; border-radius: 50%; display: grid; place-items: center; background: var(--surface); color: var(--period); }
+.toggle .ic svg { width: 22px; height: 22px; }
+.toggle b { display: block; font-size: 16px; }
+.toggle small { color: var(--muted); font-size: 13px; }
+.switch { width: 50px; height: 30px; border-radius: 999px; background: var(--cell-line); position: relative; transition: background .15s; }
+.switch::after { content: ""; position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.25); transition: transform .15s; }
+.toggle[aria-pressed="true"] { background: color-mix(in srgb, var(--period) 14%, var(--cell)); }
+.toggle[aria-pressed="true"] .switch { background: var(--period); }
+.toggle[aria-pressed="true"] .switch::after { transform: translateX(20px); }
+label.fl { display: grid; gap: 6px; font-weight: 700; font-size: 14px; }
+textarea, input[type="text"], input[type="number"], input[type="time"] {
+  width: 100%; border: 2px solid var(--cell-line); border-radius: 14px; padding: 12px; background: var(--bg); font-size: 16px;
+}
+textarea { min-height: 120px; resize: vertical; }
+textarea:focus, input:focus { border-color: var(--accent); outline: none; }
+.hint { margin: 0; font-size: 13px; color: var(--muted); }
+.callout { margin: 0; padding: 12px 14px; border-radius: 14px; background: var(--cell); font-size: 14px; }
+.row { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 12px; }
+.stepper { display: inline-flex; align-items: center; gap: 4px; background: var(--cell); border-radius: 999px; padding: 4px; }
+.stepper button { width: 36px; height: 36px; border-radius: 50%; border: 0; background: var(--surface); font-weight: 800; font-size: 18px; }
+.stepper output { min-width: 3.4ch; text-align: center; font-weight: 800; font-variant-numeric: tabular-nums; }
+.section-title { margin: 6px 0 -6px; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.history { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.history li { display: flex; justify-content: space-between; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--cell); font-variant-numeric: tabular-nums; font-size: 15px; }
+.history li span:last-child { color: var(--muted); }
+.copybox { margin: 0; padding: 12px; border-radius: 12px; background: var(--cell); font-size: 14px; white-space: pre-wrap; user-select: all; }
+.toast {
+  position: fixed; left: 50%; transform: translateX(-50%); z-index: 30;
+  bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 999px; font-weight: 700; font-size: 14px;
+  box-shadow: var(--shadow); animation: rise .2s ease; max-width: calc(100% - 32px); text-align: center;
+}
+@keyframes rise { from { transform: translateY(24px); opacity: 0; } }
+@keyframes fade { from { opacity: 0; } }
+.toast { animation-name: toastin; }
+@keyframes toastin { from { transform: translate(-50%, 16px); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+@media (max-width: 360px) { .cell .n { font-size: 13px; } .month-chip h1 { font-size: 22px; } .grid, .weekdays { gap: 4px; } }
+</style>
+
+<header class="dye" id="dye">
+  <canvas id="dyeCanvas" aria-hidden="true"></canvas>
+  <div class="dye-inner">
+    <div class="brand">
+      <span class="wordmark">My Days H</span>
+      <button class="icon-btn" id="openSettings" aria-label="Settings">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+      </button>
+    </div>
+    <div class="month-chip">
+      <button class="round" id="prevMonth" aria-label="Previous month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg></button>
+      <h1 id="monthTitle">Nov 2026</h1>
+      <button class="round" id="nextMonth" aria-label="Next month"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg></button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <div class="weekdays" aria-hidden="true"><span>Mon</span><span>Tue</span><span>Wed</span><span>Thu</span><span>Fri</span><span>Sat</span><span>Sun</span></div>
+  <div class="grid" id="grid" role="grid" aria-label="Calendar"></div>
+  <div class="legend" aria-hidden="true">
+    <span><i class="sw p"></i>Period</span>
+    <span><i class="sw pp"></i>Expected</span>
+    <span><i class="sw f"></i>Fertile</span>
+    <span><i class="sw o"></i>Ovulation</span>
+    <span><i class="sw t"></i>Today</span>
+  </div>
+
+  <section class="summary" id="summary" aria-live="polite"></section>
+
+  <p class="foot"><span class="sync" id="sync"><i></i><span>Saved on this device</span></span></p>
+</main>
+
+<div id="layer"></div>
+
+<script>
+(() => {
+  "use strict";
+
+  /* ---------- Dates (whole days as integers, no time zones) ---------- */
+  const DAY = 864e5;
+  const toNum = iso => { const [y, m, d] = iso.split("-").map(Number); return Math.round(Date.UTC(y, m - 1, d) / DAY); };
+  const toIso = n => new Date(n * DAY).toISOString().slice(0, 10);
+  const todayNum = () => { const t = new Date(); return Math.round(Date.UTC(t.getFullYear(), t.getMonth(), t.getDate()) / DAY); };
+  const parts = n => { const d = new Date(n * DAY); return { y: d.getUTCFullYear(), m: d.getUTCMonth(), d: d.getUTCDate(), wd: d.getUTCDay() }; };
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  const MONTHS_LONG = ["January","February","March","April","May","June","July","August","September","October","November","December"];
+  const WD = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+  const ord = d => d + (d % 10 === 1 && d !== 11 ? "st" : d % 10 === 2 && d !== 12 ? "nd" : d % 10 === 3 && d !== 13 ? "rd" : "th");
+  const longDate = n => { const p = parts(n); return `${WD[p.wd]}, ${MONTHS_LONG[p.m]} ${p.d}`; };
+  const shortDate = n => { const p = parts(n); return `${WD[p.wd].slice(0,3)}, ${MONTHS[p.m]} ${p.d}`; };
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+  const offsetLabel = o => o === 0 ? "on the first expected day" : o > 0 ? `${plural(o, "day")} after the expected start` : `${plural(-o, "day")} before the expected start`;
+
+  /* ---------- State ---------- */
+  const DEFAULTS = { starts: [], notes: {}, periodLen: 5, cycleLen: 0, remindTitle: "Check in", remindTime: "09:00", remindOffset: 3 };
+  const LS_KEY = "mydaysh.v1";
+  let state = clean(readLocal());
+  let today = todayNum();
+  let view = (() => { const p = parts(today); return { y: p.y, m: p.m }; })();
+  let selected = today;
+
+  function clean(raw) {
+    const s = Object.assign({}, DEFAULTS, raw && typeof raw === "object" ? raw : {});
+    s.starts = Array.isArray(s.starts) ? [...new Set(s.starts.filter(x => /^\d{4}-\d{2}-\d{2}$/.test(x)))].sort() : [];
+    s.notes = s.notes && typeof s.notes === "object" ? Object.fromEntries(Object.entries(s.notes).filter(([k, v]) => /^\d{4}-\d{2}-\d{2}$/.test(k) && typeof v === "string" && v.trim())) : {};
+    s.periodLen = Math.min(10, Math.max(2, Number(s.periodLen) || 5));
+    s.cycleLen = Number(s.cycleLen) >= 18 && Number(s.cycleLen) <= 50 ? Number(s.cycleLen) : 0;
+    s.remindTitle = typeof s.remindTitle === "string" && s.remindTitle.trim() ? s.remindTitle.slice(0, 60) : DEFAULTS.remindTitle;
+    s.remindTime = /^\d{2}:\d{2}$/.test(s.remindTime) ? s.remindTime : DEFAULTS.remindTime;
+    s.remindOffset = Number.isInteger(s.remindOffset) && s.remindOffset >= -7 && s.remindOffset <= 14 ? s.remindOffset : DEFAULTS.remindOffset;
+    return s;
+  }
+  function readLocal() { try { return JSON.parse(localStorage.getItem(LS_KEY) || "null"); } catch { return null; } }
+  function writeLocal() { try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch {} }
+
+  /* ---------- Cloud save (private to the signed-in viewer) ---------- */
+  let docRef = null, saveTimer = null, saving = false, pending = false;
+  function setSync(ok, text) { const el = document.getElementById("sync"); el.classList.toggle("ok", ok); el.lastElementChild.textContent = text; }
+  async function connect() {
+    if (!window.claude || typeof window.claude.use !== "function") return;
+    try {
+      const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+      if (!db || !user) return;
+      const id = await user.id();
+      if (!id) return;
+      docRef = db.collection("data/users/" + id).doc("tracker");
+      const snap = await Promise.race([docRef.get(), new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 10000))]);
+      if (snap.exists) {
+        state = clean(snap.data());
+        writeLocal();
+        render();
+      } else if (state.starts.length || Object.keys(state.notes).length) {
+        await pushNow();
+      }
+      setSync(true, "Saved to your account, private to you");
+    } catch { docRef = null; }
+  }
+  async function pushNow() {
+    if (!docRef) return;
+    if (saving) { pending = true; return; }
+    saving = true;
+    try { await docRef.set(JSON.parse(JSON.stringify(state))); setSync(true, "Saved to your account, private to you"); }
+    catch { setSync(false, "Couldn't reach your account. Saved on this device."); }
+    saving = false;
+    if (pending) { pending = false; pushNow(); }
+  }
+  function save() {
+    writeLocal();
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(pushNow, 700);
+  }
+
+  /* ---------- Cycle math ---------- */
+  function model() {
+    const starts = state.starts.map(toNum).sort((a, b) => a - b);
+    const gaps = [];
+    for (let i = 1; i < starts.length; i++) { const g = starts[i] - starts[i - 1]; if (g >= 18 && g <= 50) gaps.push(g); }
+    const recent = gaps.slice(-6);
+    const auto = recent.length ? Math.round(recent.reduce((a, b) => a + b, 0) / recent.length) : 0;
+    const L = state.cycleLen || auto || 28;
+    const P = state.periodLen;
+    const last = starts.length ? starts[starts.length - 1] : null;
+    const predicted = [];
+    if (last !== null) for (let k = 1; k <= 18; k++) predicted.push(last + k * L);
+    const bounds = [...starts, ...predicted];
+    const days = new Map();
+    const mark = (d, k) => { let s = days.get(d); if (!s) days.set(d, s = new Set()); s.add(k); };
+    starts.forEach((s, i) => {
+      const end = Math.min(s + P - 1, (i + 1 < starts.length ? starts[i + 1] : Infinity) - 1);
+      for (let d = s; d <= end; d++) mark(d, "period");
+    });
+    predicted.forEach(s => { for (let d = s; d < s + P; d++) mark(d, "predicted"); });
+    const ovs = [];
+    for (let i = 1; i < bounds.length; i++) {
+      const ov = bounds[i] - 14, prevEnd = bounds[i - 1] + P - 1;
+      if (ov <= prevEnd) continue;
+      ovs.push(ov); mark(ov, "ovulation");
+      for (let d = Math.max(ov - 5, prevEnd + 1); d < ov; d++) mark(d, "fertile");
+    }
+    return { starts, L, P, last, predicted, bounds, ovs, days, auto, gaps: recent };
+  }
+
+  /* ---------- Rendering ---------- */
+  const grid = document.getElementById("grid");
+  const DROP = '<svg class="drop" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 2.5s-6.5 7.4-6.5 12a6.5 6.5 0 0 0 13 0c0-4.6-6.5-12-6.5-12z"/></svg>';
+
+  function render() {
+    today = todayNum();
+    const M = model();
+    document.getElementById("monthTitle").textContent = `${MONTHS[view.m]} ${view.y}`;
+    const first = Math.round(Date.UTC(view.y, view.m, 1) / DAY);
+    const dim = new Date(Date.UTC(view.y, view.m + 1, 0)).getUTCDate();
+    const offset = (parts(first).wd + 6) % 7;
+    const startSet = new Set(M.starts);
+    let html = "";
+    for (let i = 0; i < offset; i++) html += '<div class="cell blank" aria-hidden="true"></div>';
+    for (let d = 1; d <= dim; d++) {
+      const n = first + d - 1;
+      const k = M.days.get(n) || new Set();
+      const cls = ["cell"];
+      if (k.has("period")) cls.push("period");
+      else if (k.has("ovulation")) cls.push("ovulation");
+      else if (k.has("fertile")) cls.push("fertile");
+      if (k.has("predicted") && !k.has("period")) cls.push("predicted");
+      if (n === today) cls.push("today");
+      if (n === selected) cls.push("selected");
+      if (n < today) cls.push("past");
+      const note = state.notes[toIso(n)];
+      const label = [longDate(n), n === today ? "today" : "", startSet.has(n) ? "period started" : k.has("period") ? "period" : "", k.has("predicted") && !k.has("period") ? "period expected" : "", k.has("ovulation") ? "ovulation expected" : k.has("fertile") ? "fertile window" : "", note ? "has a note" : ""].filter(Boolean).join(", ");
+      html += `<button class="${cls.join(" ")}" data-n="${n}" aria-label="${label}"><span class="n">${d}</span>${note ? '<i class="dot"></i>' : ""}${startSet.has(n) ? DROP : ""}</button>`;
+    }
+    grid.innerHTML = html;
+    renderSummary(M);
+  }
+
+  function renderSummary(M) {
+    const el = document.getElementById("summary");
+    const D = selected;
+    const isToday = D === today;
+    const p = parts(D);
+    const heading = isToday ? `Today, ${WD[p.wd]} ${ord(p.d)}` : `${WD[p.wd]} ${MONTHS_LONG[p.m]} ${ord(p.d)}`;
+    if (M.last === null) {
+      el.innerHTML = `<h2>Welcome to My Days H</h2>
+        <p class="hint" style="font-size:15px">Tap the day your last period started, or log it now if it's today. After that you'll see how many days until your next period and ovulation.</p>
+        <div class="actions"><button class="btn primary" data-act="log-today">${ICON.drop} My period started today</button><button class="btn soft" data-act="open-day">Pick another day</button></div>
+        <div class="rainbow" aria-hidden="true"></div>`;
+      return;
+    }
+    const facts = [];
+    const nextExpected = M.last + M.L;
+    const late = D >= nextExpected && D <= today && M.last <= D;
+    const prevStart = Math.max(...M.bounds.filter(b => b <= D), -Infinity);
+    if (late) {
+      const n = D - nextExpected;
+      facts.push(n === 0
+        ? { big: "!", cls: "p", lbl: "Period expected today", sub: "Tap the day it starts to log it" }
+        : { big: n, cls: "p", lbl: `${n === 1 ? "Day" : "Days"} late`, sub: `Expected ${shortDate(nextExpected)}. Tap the day it starts.` });
+      facts.push({ big: D - M.last + 1, cls: "c", lbl: "Day of this cycle", sub: `Started ${shortDate(M.last)}` });
+    } else {
+      const next = M.bounds.find(b => b > D);
+      const nextOv = M.ovs.find(o => o >= D);
+      if (next !== undefined) facts.push({ big: next - D, cls: "p", lbl: `${next - D === 1 ? "day" : "days"} until next period`, sub: shortDate(next) });
+      if (nextOv !== undefined) facts.push(nextOv === D
+        ? { big: "0", cls: "o", lbl: "Ovulation expected today", sub: "Most fertile day" }
+        : { big: nextOv - D, cls: "o", lbl: `${nextOv - D === 1 ? "day" : "days"} until next ovulation`, sub: shortDate(nextOv) });
+      if (prevStart > -Infinity) facts.push({ big: D - prevStart + 1, cls: "c", lbl: "Day of this cycle", sub: `Cycle length ${M.L} days${state.cycleLen ? "" : M.auto ? ", your average" : ", default until you log more"}` });
+    }
+    const note = state.notes[toIso(D)];
+    const startedToday = M.starts.includes(today);
+    const recent = today - M.last < 10;
+    const remindAt = nextExpected + state.remindOffset > today ? nextExpected + state.remindOffset : null;
+    el.innerHTML = `<h2>${heading}</h2>
+      <ul class="facts">${facts.map(f => `<li class="fact"><span class="big ${f.cls}">${f.big}</span><span class="lbl">${f.lbl}<span class="sub">${f.sub}</span></span></li>`).join("")}</ul>
+      ${note ? `<p class="note-preview"></p>` : ""}
+      <div class="actions">
+        ${!startedToday && !recent ? `<button class="btn primary" data-act="log-today">${ICON.drop} Period started today</button>` : ""}
+        <button class="btn soft" data-act="open-day">${ICON.note} ${isToday ? "Today's note" : "Open this day"}</button>
+        ${remindAt ? `<button class="btn soft" data-act="remind">${ICON.bell} Remind me ${shortDate(remindAt)}</button>` : ""}
+      </div>
+      <div class="rainbow" aria-hidden="true"></div>`;
+    if (note) el.querySelector(".note-preview").textContent = note;
+  }
+
+  const ICON = {
+    drop: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.5s-6.5 7.4-6.5 12a6.5 6.5 0 0 0 13 0c0-4.6-6.5-12-6.5-12z"/></svg>',
+    note: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7"/></svg>',
+    bell: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 1 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
+    close: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>'
+  };
+
+  /* ---------- Sheets ---------- */
+  const layer = document.getElementById("layer");
+  let onClose = null;
+  function openSheet(title, bodyHtml, after) {
+    closeSheet(true);
+    layer.innerHTML = `<div class="scrim" data-act="close"></div>
+      <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle"><div class="wrap">
+        <div class="grab" aria-hidden="true"></div>
+        <div class="sheet-head"><h3 id="sheetTitle"></h3><button class="round" data-act="close" aria-label="Close">${ICON.close}</button></div>
+        ${bodyHtml}
+      </div></div>`;
+    layer.querySelector("#sheetTitle").textContent = title;
+    if (after) after(layer.querySelector(".sheet"));
+  }
+  function closeSheet(silent) {
+    if (onClose) { const f = onClose; onClose = null; f(); }
+    layer.innerHTML = "";
+    if (!silent) render();
+  }
+
+  function openDay(n) {
+    selected = n;
+    const iso = toIso(n);
+    const isStart = state.starts.includes(iso);
+    const future = n > today;
+    const body = `
+      ${future ? `<p class="callout">This day hasn't happened yet, so you can only add a note.</p>` : `
+      <button class="toggle" id="startToggle" aria-pressed="${isStart}">
+        <span class="ic">${ICON.drop}</span>
+        <span><b>Period started this day</b><small>${isStart ? "Logged. Tap to undo." : "Tap to log it"}</small></span>
+        <span class="switch" aria-hidden="true"></span>
+      </button>`}
+      <label class="fl" for="noteText">Note
+        <textarea id="noteText" placeholder="Anything you want to remember about this day"></textarea>
+      </label>
+      <p class="hint">Notes save as you type.</p>`;
+    openSheet(longDate(n) + (n === today ? " (today)" : ""), body, sheet => {
+      const ta = sheet.querySelector("#noteText");
+      ta.value = state.notes[iso] || "";
+      let t = null;
+      const commit = () => {
+        const v = ta.value.trim();
+        if (v) state.notes[iso] = ta.value; else delete state.notes[iso];
+        save();
+      };
+      ta.addEventListener("input", () => { clearTimeout(t); t = setTimeout(commit, 500); });
+      onClose = () => { clearTimeout(t); if ((state.notes[iso] || "") !== ta.value) commit(); };
+      const tg = sheet.querySelector("#startToggle");
+      if (tg) tg.addEventListener("click", () => {
+        const on = tg.getAttribute("aria-pressed") !== "true";
+        if (on) state.starts = [...new Set([...state.starts, iso])].sort();
+        else state.starts = state.starts.filter(s => s !== iso);
+        tg.setAttribute("aria-pressed", String(on));
+        tg.querySelector("small").textContent = on ? "Logged. Tap to undo." : "Tap to log it";
+        save(); render();
+        toast(on ? "Period start logged" : "Removed");
+      });
+    });
+    render();
+  }
+
+  function logToday() {
+    const iso = toIso(today);
+    if (!state.starts.includes(iso)) state.starts = [...state.starts, iso].sort();
+    selected = today;
+    const p = parts(today); view = { y: p.y, m: p.m };
+    save(); render();
+    toast("Period start logged for today");
+  }
+
+  /* ---------- Calendar reminder ---------- */
+  const isViewer = !!(window.claude && typeof window.claude.use === "function" && window.parent !== window);
+  function icsFor(n) {
+    const d = toIso(n).replace(/-/g, ""), e = toIso(n + 1).replace(/-/g, "");
+    const [hh, mm] = state.remindTime.split(":").map(Number);
+    const stamp = new Date().toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
+    const esc = s => s.replace(/[\\;,]/g, m => "\\" + m).replace(/\n/g, "\\n");
+    return ["BEGIN:VCALENDAR","VERSION:2.0","PRODID:-//MDH//EN","CALSCALE:GREGORIAN","BEGIN:VEVENT",
+      `UID:mdh-${d}@local`, `DTSTAMP:${stamp}`, `DTSTART;VALUE=DATE:${d}`, `DTEND;VALUE=DATE:${e}`,
+      `SUMMARY:${esc(state.remindTitle)}`, "TRANSP:TRANSPARENT", "BEGIN:VALARM", "ACTION:DISPLAY",
+      `DESCRIPTION:${esc(state.remindTitle)}`, `TRIGGER:PT${hh}H${mm}M`, "END:VALARM", "END:VEVENT", "END:VCALENDAR"].join("\r\n");
+  }
+  function openRemind() {
+    const M = model();
+    const n = M.last + M.L + state.remindOffset;
+    const d = toIso(n).replace(/-/g, "");
+    const gcal = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(state.remindTitle)}&dates=${d}/${toIso(n + 1).replace(/-/g, "")}`;
+    const [hh, mm] = state.remindTime.split(":").map(Number);
+    const timeLabel = new Date(2000, 0, 1, hh, mm).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+    const body = `
+      <p class="hint" style="font-size:15px">Adds an all-day event on <b>${longDate(n)}</b>, ${offsetLabel(state.remindOffset)} (${shortDate(M.last + M.L)}), with an alert at ${timeLabel}. The event is just called <b id="evTitle"></b>, so it won't say what it's for if someone sees your calendar. You can change the name in Settings.</p>
+      <div class="actions">
+        ${isViewer ? "" : `<button class="btn primary" data-act="ics">${ICON.bell} Add to iPhone Calendar</button>`}
+        <a class="btn ${isViewer ? "primary" : "soft"}" href="${gcal}" target="_blank" rel="noopener">Add to Google Calendar</a>
+      </div>
+      ${isViewer ? `<p class="callout">Adding straight to the iPhone Calendar works once My Days H is installed as its own app. Here, use Google Calendar, or add the event yourself:</p>
+      <pre class="copybox" id="copyText"></pre>
+      <button class="btn soft" data-act="copy">Copy event details</button>` : ""}
+      <p class="hint">If your period date changes, add a new reminder and delete the old event.</p>`;
+    openSheet("Calendar reminder", body, sheet => {
+      sheet.querySelector("#evTitle").textContent = state.remindTitle;
+      const ct = sheet.querySelector("#copyText");
+      if (ct) ct.textContent = `${state.remindTitle}\n${longDate(n)}, all day\nAlert at ${timeLabel}`;
+      sheet.dataset.n = n;
+    });
+  }
+  function downloadIcs(n) {
+    const blob = new Blob([icsFor(n)], { type: "text/calendar" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob); a.download = "check-in.ics";
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }
+
+  /* ---------- Settings ---------- */
+  function openSettings() {
+    const M = model();
+    const hist = [...M.starts].reverse().slice(0, 12).map((s, i, arr) => {
+      const next = i === 0 ? null : arr[i - 1];
+      return `<li><span>${shortDate(s)}, ${parts(s).y}</span><span>${next ? plural(next - s, "day") : "current"}</span></li>`;
+    }).join("");
+    const body = `
+      <p class="section-title">Cycle</p>
+      <div class="row"><span><b>Period length</b><br><span class="hint">Days to shade after each start</span></span>
+        <span class="stepper"><button data-step="periodLen" data-d="-1" aria-label="Shorter">−</button><output id="periodLenOut">${state.periodLen}</output><button data-step="periodLen" data-d="1" aria-label="Longer">+</button></span></div>
+      <div class="row"><span><b>Cycle length</b><br><span class="hint" id="cycleHint"></span></span>
+        <span class="stepper"><button data-step="cycleLen" data-d="-1" aria-label="Shorter">−</button><output id="cycleLenOut"></output><button data-step="cycleLen" data-d="1" aria-label="Longer">+</button></span></div>
+      <p class="section-title">Calendar reminder</p>
+      <div class="row"><span><b>When to remind</b><br><span class="hint" id="offsetHint"></span></span>
+        <span class="stepper"><button data-step="remindOffset" data-d="-1" aria-label="Earlier">−</button><output id="remindOffsetOut"></output><button data-step="remindOffset" data-d="1" aria-label="Later">+</button></span></div>
+      <label class="fl" for="remindTitle">Event name
+        <input type="text" id="remindTitle" maxlength="60"></label>
+      <label class="fl" for="remindTime">Alert time
+        <input type="time" id="remindTime"></label>
+      <p class="section-title">History</p>
+      ${hist ? `<ul class="history">${hist}</ul>` : `<p class="hint">No periods logged yet.</p>`}
+      <p class="section-title">Backup</p>
+      <p class="hint">Save a backup file now and then. You can restore it on a new phone.</p>
+      <div class="actions">
+        <button class="btn soft" data-act="export">Save backup</button>
+        <label class="btn soft" for="importFile">Restore backup</label>
+        <input type="file" id="importFile" accept="application/json,.json" hidden>
+      </div>
+      <div id="dangerZone"><button class="btn danger" data-act="ask-clear">Delete all data</button></div>`;
+    openSheet("Settings", body, sheet => {
+      const cycleOut = sheet.querySelector("#cycleLenOut"), cycleHint = sheet.querySelector("#cycleHint");
+      const paintCycle = () => {
+        const m = model();
+        cycleOut.textContent = state.cycleLen || "Auto";
+        cycleHint.textContent = state.cycleLen ? "Set by you. Go below 18 for Auto." : `Auto: ${m.L} days${m.auto ? `, average of your last ${m.gaps.length + 1} periods` : " until you log two periods"}`;
+      };
+      paintCycle();
+      const paintOffset = () => {
+        const o = state.remindOffset;
+        sheet.querySelector("#remindOffsetOut").textContent = o > 0 ? "+" + o : String(o);
+        sheet.querySelector("#offsetHint").textContent = o === 0 ? "On the day your period is expected" : `${plural(Math.abs(o), "day")} ${o > 0 ? "after" : "before"} your period is expected`;
+      };
+      paintOffset();
+      sheet.querySelectorAll("[data-step]").forEach(b => b.addEventListener("click", () => {
+        const key = b.dataset.step, d = Number(b.dataset.d);
+        if (key === "remindOffset") { state.remindOffset = Math.min(14, Math.max(-7, state.remindOffset + d)); paintOffset(); }
+        else if (key === "periodLen") { state.periodLen = Math.min(10, Math.max(2, state.periodLen + d)); sheet.querySelector("#periodLenOut").textContent = state.periodLen; }
+        else {
+          const base = state.cycleLen || model().L;
+          let v = state.cycleLen ? base + d : base + (d > 0 ? 1 : -1);
+          state.cycleLen = v < 18 ? 0 : Math.min(50, v);
+          paintCycle();
+        }
+        save(); render();
+      }));
+      const rt = sheet.querySelector("#remindTitle"), rtime = sheet.querySelector("#remindTime");
+      rt.value = state.remindTitle; rtime.value = state.remindTime;
+      rt.addEventListener("change", () => { state.remindTitle = rt.value.trim().slice(0, 60) || DEFAULTS.remindTitle; rt.value = state.remindTitle; save(); });
+      rtime.addEventListener("change", () => { if (/^\d{2}:\d{2}$/.test(rtime.value)) { state.remindTime = rtime.value; save(); } });
+      sheet.querySelector("#importFile").addEventListener("change", e => {
+        const f = e.target.files && e.target.files[0]; if (!f) return;
+        const r = new FileReader();
+        r.onload = () => {
+          try {
+            const data = JSON.parse(r.result);
+            if (!data || !Array.isArray(data.starts)) throw new Error();
+            state = clean(data); save(); closeSheet(); toast(`Restored ${plural(state.starts.length, "period")}`);
+          } catch { toast("That file isn't a My Days H backup"); }
+        };
+        r.readAsText(f);
+      });
+    });
+  }
+  async function exportBackup() {
+    const json = JSON.stringify({ app: "My Days H", version: 1, saved: new Date().toISOString(), ...state }, null, 2);
+    const name = `my-days-h-backup-${toIso(today)}.json`;
+    if (isViewer) {
+      try {
+        const dl = await window.claude.use("downloads");
+        if (!dl) { toast("Saving files isn't available here"); return; }
+        await dl.save({ filename: name, data: json });
+        toast("Backup saved");
+      } catch (e) { if (!e || e.code !== "declined") toast("Couldn't save the backup"); }
+      return;
+    }
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([json], { type: "application/json" })); a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+  }
+
+  /* ---------- Toast ---------- */
+  let toastTimer = null;
+  function toast(msg) {
+    document.querySelectorAll(".toast").forEach(t => t.remove());
+    const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg;
+    document.body.appendChild(t);
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => t.remove(), 2400);
+  }
+
+  /* ---------- Events ---------- */
+  grid.addEventListener("click", e => {
+    const c = e.target.closest(".cell[data-n]"); if (!c) return;
+    const n = Number(c.dataset.n);
+    if (selected === n) openDay(n); else { selected = n; render(); }
+  });
+  grid.addEventListener("dblclick", e => { const c = e.target.closest(".cell[data-n]"); if (c) openDay(Number(c.dataset.n)); });
+  document.getElementById("prevMonth").addEventListener("click", () => shiftMonth(-1));
+  document.getElementById("nextMonth").addEventListener("click", () => shiftMonth(1));
+  document.getElementById("openSettings").addEventListener("click", openSettings);
+  function shiftMonth(d) {
+    const m = view.m + d; view = { y: view.y + Math.floor(m / 12), m: ((m % 12) + 12) % 12 };
+    render();
+  }
+  let tx = null, ty = null;
+  grid.addEventListener("touchstart", e => { tx = e.touches[0].clientX; ty = e.touches[0].clientY; }, { passive: true });
+  grid.addEventListener("touchend", e => {
+    if (tx === null) return;
+    const dx = e.changedTouches[0].clientX - tx, dy = e.changedTouches[0].clientY - ty;
+    if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) shiftMonth(dx < 0 ? 1 : -1);
+    tx = ty = null;
+  });
+  document.addEventListener("click", async e => {
+    const b = e.target.closest("[data-act]"); if (!b) return;
+    const act = b.dataset.act;
+    if (act === "close") closeSheet();
+    else if (act === "log-today") logToday();
+    else if (act === "open-day") openDay(selected);
+    else if (act === "remind") openRemind();
+    else if (act === "ics") { downloadIcs(Number(layer.querySelector(".sheet").dataset.n)); toast("Opening Calendar"); }
+    else if (act === "copy") {
+      const txt = layer.querySelector("#copyText").textContent;
+      try { await navigator.clipboard.writeText(txt); toast("Copied"); }
+      catch { const r = document.createRange(); r.selectNodeContents(layer.querySelector("#copyText")); const s = getSelection(); s.removeAllRanges(); s.addRange(r); }
+    }
+    else if (act === "export") exportBackup();
+    else if (act === "ask-clear") {
+      layer.querySelector("#dangerZone").innerHTML = `<p class="callout">This deletes every logged period and note. It can't be undone.</p>
+        <div class="actions"><button class="btn danger" data-act="clear">Yes, delete everything</button><button class="btn soft" data-act="keep">Keep my data</button></div>`;
+    }
+    else if (act === "keep") layer.querySelector("#dangerZone").innerHTML = `<button class="btn danger" data-act="ask-clear">Delete all data</button>`;
+    else if (act === "clear") { state = clean({}); save(); closeSheet(); toast("All data deleted"); }
+  });
+  document.addEventListener("keydown", e => { if (e.key === "Escape" && layer.innerHTML) closeSheet(); });
+  document.addEventListener("visibilitychange", () => { if (!document.hidden && todayNum() !== today) { selected = todayNum(); render(); } });
+
+  /* ---------- Tie-dye header ---------- */
+  const PALETTE = [
+    [232, 23, 75], [240, 66, 122], [255, 255, 255], [247, 148, 29], [255, 217, 59], [255, 250, 235],
+    [42, 159, 216], [122, 79, 191], [255, 255, 255], [108, 194, 74], [255, 217, 59], [240, 66, 122]
+  ];
+  function drawDye() {
+    const c = document.getElementById("dyeCanvas");
+    const box = c.getBoundingClientRect();
+    const scale = 0.5;
+    const W = Math.max(60, Math.round(box.width * scale)), H = Math.max(40, Math.round(box.height * scale));
+    c.width = W; c.height = H;
+    const ctx = c.getContext("2d");
+    const img = ctx.createImageData(W, H);
+    const cx = W * 0.78, cy = H * 1.05;
+    const ring = Math.max(W, H) * 0.075;
+    const N = PALETTE.length;
+    let seed = 7;
+    const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+    const streak = new Float32Array(720);
+    for (let i = 0; i < 720; i++) streak[i] = rnd();
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      const dx = x - cx, dy = y - cy;
+      const r = Math.hypot(dx, dy), a = Math.atan2(dy, dx);
+      const wob = Math.sin(a * 9 + r * 0.04) * 0.22 + Math.sin(a * 23) * 0.08;
+      let t = r / ring + wob + a * 0.35;
+      t = ((t % N) + N) % N;
+      const i0 = Math.floor(t), f = t - i0, i1 = (i0 + 1) % N;
+      const s = f * f * (3 - 2 * f);
+      let R = PALETTE[i0][0] * (1 - s) + PALETTE[i1][0] * s;
+      let G = PALETTE[i0][1] * (1 - s) + PALETTE[i1][1] * s;
+      let B = PALETTE[i0][2] * (1 - s) + PALETTE[i1][2] * s;
+      const ai = Math.floor(((a + Math.PI) / (2 * Math.PI)) * 720) % 720;
+      const sv = streak[ai];
+      const band = Math.abs(f - 0.5);
+      if (sv > 0.72 && band > 0.28) { const k = Math.min(1, (sv - 0.72) * 3.2) * 0.85; R += (255 - R) * k; G += (255 - G) * k; B += (255 - B) * k; }
+      const o = (y * W + x) * 4;
+      img.data[o] = R; img.data[o + 1] = G; img.data[o + 2] = B; img.data[o + 3] = 255;
+    }
+    ctx.putImageData(img, 0, 0);
+    c.style.filter = "blur(1.2px) saturate(1.05)";
+  }
+  let dyeW = 0;
+  function maybeDraw() { const w = document.getElementById("dye").clientWidth; if (Math.abs(w - dyeW) > 4) { dyeW = w; drawDye(); } }
+  window.addEventListener("resize", () => { clearTimeout(maybeDraw.t); maybeDraw.t = setTimeout(maybeDraw, 150); });
+
+  render();
+  maybeDraw();
+  connect();
+})();
+</script>
+
+</body></html>
